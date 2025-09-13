@@ -1,10 +1,16 @@
 using BepInEx;
+using BepInEx.Configuration;
 using HarmonyLib;
+using RiskOfOptions;
+using RiskOfOptions.OptionConfigs;
+using RiskOfOptions.Options;
+using System;
 using UnityEngine;
 
 namespace VoidBlinkHoldToFloat
 {
     [BepInPlugin("com.yourname.voidblinkhold", "Void Blink Hold to Float", "1.0.0")]
+    [BepInDependency("com.rune580.riskofoptions")]
     public class Main : BaseUnityPlugin
     {
         // Hardcoded values from VoidBlinkDown (for tap behavior)
@@ -26,6 +32,9 @@ namespace VoidBlinkHoldToFloat
         private static bool modeDetermined = false;
         private static float transitionStartTime = 0f;
         private static Vector3 transitionStartVelocity = Vector3.zero;
+
+        // Configuration
+        public static ConfigEntry<bool> DisableCancellation;
 
         static Main()
         {
@@ -58,7 +67,59 @@ namespace VoidBlinkHoldToFloat
 
         public void Awake()
         {
+            // Create configuration
+            DisableCancellation = Config.Bind("Settings", "Disable Cancellation", false,
+                "If enabled, the ability cannot be cancelled by releasing shift - it will always complete its full duration");
+
+            // Set up Risk of Options
+            SetupRiskOfOptions();
+
             new Harmony("com.yourname.voidblinkhold").PatchAll();
+        }
+
+        private void SetupRiskOfOptions()
+        {
+            try
+            {
+                // Register the option with Risk of Options
+                ModSettingsManager.AddOption(new CheckBoxOption(DisableCancellation));
+
+                // Set mod description
+                ModSettingsManager.SetModDescription("Hold Shift during Void Blink to float upward instead of dashing forward. Tap for dash, hold for float!");
+
+                // Set mod icon if available
+                SetModIcon();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error setting up Risk of Options: {ex}");
+            }
+        }
+
+        private void SetModIcon()
+        {
+            try
+            {
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                using (var stream = assembly.GetManifestResourceStream("VoidBlinkHoldToFloat.icon.png"))
+                {
+                    if (stream != null)
+                    {
+                        byte[] data = new byte[stream.Length];
+                        stream.Read(data, 0, data.Length);
+
+                        Texture2D texture = new Texture2D(2, 2);
+                        texture.LoadImage(data);
+
+                        Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                        ModSettingsManager.SetModIcon(sprite);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"Failed to set mod icon: {ex}");
+            }
         }
 
         private static bool IsShiftKeyHeld()
@@ -148,8 +209,9 @@ namespace VoidBlinkHoldToFloat
             {
                 bool shiftHeld = IsShiftKeyHeld();
 
-                // If we're in hold mode but shift is released, cancel the ability
-                if (__instance.isAuthority && modeDetermined && isHoldingMode && !shiftHeld && __instance.fixedAge > 0.1f)
+                // If we're in hold mode but shift is released, cancel the ability (unless disabled)
+                if (__instance.isAuthority && modeDetermined && isHoldingMode && !shiftHeld &&
+                    __instance.fixedAge > 0.1f && !DisableCancellation.Value)
                 {
                     Traverse.Create(__instance).Field("duration").SetValue(__instance.fixedAge);
                 }
