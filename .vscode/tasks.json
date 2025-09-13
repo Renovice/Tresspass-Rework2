@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+        "label": "Rebuild Solution",
+        "type": "shell",
+        "command": "dotnet clean && dotnet build",
+        "group": "build",
+        "problemMatcher": [
+            "$msCompile"
+        ],
+        "presentation": {
+            "reveal": "always"
+        }
+    }
+]
+}
