@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace VoidBlinkHoldToFloat
 {
-    [BepInPlugin("com.yourname.voidblinkhold", "Void Blink Hold to Float", "1.0.0")]
+    [BepInPlugin("com.yourname.voidblinkhold", "TresspassTweaks", "1.0.0")]
     [BepInDependency("com.rune580.riskofoptions")]
     public class Main : BaseUnityPlugin
     {
@@ -35,6 +35,7 @@ namespace VoidBlinkHoldToFloat
 
         // Configuration
         public static ConfigEntry<bool> DisableCancellation;
+        public static ConfigEntry<KeyboardShortcut> FloatKeybind;
 
         static Main()
         {
@@ -67,9 +68,12 @@ namespace VoidBlinkHoldToFloat
 
         public void Awake()
         {
-            // Create configuration
-            DisableCancellation = Config.Bind("Settings", "Disable Cancellation", false,
-                "If enabled, the ability cannot be cancelled by releasing shift - it will always complete its full duration");
+            // Create configurations
+            DisableCancellation = Config.Bind("Tweaks", "Disable Cancellation", false,
+                "If enabled, the ability cannot be cancelled by releasing the keybind - it will always complete its full duration");
+
+            FloatKeybind = Config.Bind("Controls", "Upward arc keybind", new KeyboardShortcut(KeyCode.LeftShift),
+                "The key to hold for floating upward instead of dashing. (Make sure to bind to the same button as trespass)");
 
             // Set up Risk of Options
             SetupRiskOfOptions();
@@ -81,11 +85,12 @@ namespace VoidBlinkHoldToFloat
         {
             try
             {
-                // Register the option with Risk of Options
+                // Register options with Risk of Options
                 ModSettingsManager.AddOption(new CheckBoxOption(DisableCancellation));
+                ModSettingsManager.AddOption(new KeyBindOption(FloatKeybind));
 
                 // Set mod description
-                ModSettingsManager.SetModDescription("Hold Shift during Void Blink to float upward instead of dashing forward. Tap for dash, hold for float!");
+                ModSettingsManager.SetModDescription("Hold the configured key during Void Blink to float upward instead of dashing forward. Tap for dash, hold for float!");
 
                 // Set mod icon if available
                 SetModIcon();
@@ -122,9 +127,9 @@ namespace VoidBlinkHoldToFloat
             }
         }
 
-        private static bool IsShiftKeyHeld()
+        private static bool IsFloatKeyHeld()
         {
-            return Input.GetKey(KeyCode.LeftShift);
+            return FloatKeybind.Value.IsDown();
         }
 
         [HarmonyPatch(typeof(EntityStates.VoidSurvivor.VoidBlinkBase), "OnEnter")]
@@ -151,8 +156,8 @@ namespace VoidBlinkHoldToFloat
                 // Use fixed timing for mode determination - always dash for first 0.25s
                 if (!modeDetermined && __instance.fixedAge >= INITIAL_DASH_TIME)
                 {
-                    // After initial dash time, check if shift is still held to determine mode
-                    isHoldingMode = IsShiftKeyHeld();
+                    // After initial dash time, check if float key is still held to determine mode
+                    isHoldingMode = IsFloatKeyHeld();
                     modeDetermined = true;
 
                     if (isHoldingMode)
@@ -207,10 +212,10 @@ namespace VoidBlinkHoldToFloat
         {
             static void Postfix(EntityStates.VoidSurvivor.VoidBlinkBase __instance)
             {
-                bool shiftHeld = IsShiftKeyHeld();
+                bool floatKeyHeld = IsFloatKeyHeld();
 
-                // If we're in hold mode but shift is released, cancel the ability (unless disabled)
-                if (__instance.isAuthority && modeDetermined && isHoldingMode && !shiftHeld &&
+                // If we're in hold mode but float key is released, cancel the ability (unless disabled)
+                if (__instance.isAuthority && modeDetermined && isHoldingMode && !floatKeyHeld &&
                     __instance.fixedAge > 0.1f && !DisableCancellation.Value)
                 {
                     Traverse.Create(__instance).Field("duration").SetValue(__instance.fixedAge);
