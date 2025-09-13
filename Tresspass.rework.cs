@@ -19,11 +19,9 @@ namespace VoidBlinkHoldToFloat
         private static readonly AnimationCurve UP_UP_SPEED;
         private static readonly AnimationCurve UP_FORWARD_SPEED;
 
-        // Tap detection settings
-        private const float TAP_TIMEOUT = 0.19f;
-        private const float TRANSITION_DURATION = 0.3f; // Longer transition for smoother arc
-        private static float shiftPressTime = 0f;
-        private static bool wasShiftHeld = false;
+        // Timing settings
+        private const float INITIAL_DASH_TIME = 0.25f; // Fixed time before mode determination
+        private const float TRANSITION_DURATION = 0.3f; // Smooth transition time
         private static bool isHoldingMode = false;
         private static bool modeDetermined = false;
         private static float transitionStartTime = 0f;
@@ -74,8 +72,6 @@ namespace VoidBlinkHoldToFloat
             static void Postfix(EntityStates.VoidSurvivor.VoidBlinkBase __instance)
             {
                 // Reset state for new blink
-                shiftPressTime = Time.time;
-                wasShiftHeld = IsShiftKeyHeld();
                 isHoldingMode = false;
                 modeDetermined = false;
                 transitionStartTime = 0f;
@@ -91,24 +87,15 @@ namespace VoidBlinkHoldToFloat
         {
             static bool Prefix(EntityStates.VoidSurvivor.VoidBlinkBase __instance, ref Vector3 __result)
             {
-                bool shiftHeld = IsShiftKeyHeld();
-                float elapsedTime = Time.time - shiftPressTime;
-
-                // Determine mode if not already determined
-                if (!modeDetermined)
+                // Use fixed timing for mode determination - always dash for first 0.25s
+                if (!modeDetermined && __instance.fixedAge >= INITIAL_DASH_TIME)
                 {
-                    // If shift is released before timeout, it's definitely a tap
-                    if (!shiftHeld && elapsedTime < TAP_TIMEOUT)
+                    // After initial dash time, check if shift is still held to determine mode
+                    isHoldingMode = IsShiftKeyHeld();
+                    modeDetermined = true;
+
+                    if (isHoldingMode)
                     {
-                        isHoldingMode = false;
-                        modeDetermined = true;
-                        Traverse.Create(__instance).Field("duration").SetValue(DOWN_DURATION);
-                    }
-                    // If we reach timeout while still holding shift, it's a hold
-                    else if (elapsedTime >= TAP_TIMEOUT && shiftHeld)
-                    {
-                        isHoldingMode = true;
-                        modeDetermined = true;
                         transitionStartTime = __instance.fixedAge;
                         transitionStartVelocity = __instance.characterMotor?.velocity ?? Vector3.zero;
                         Traverse.Create(__instance).Field("duration").SetValue(UP_DURATION);
@@ -161,14 +148,11 @@ namespace VoidBlinkHoldToFloat
             {
                 bool shiftHeld = IsShiftKeyHeld();
 
-                // If mode is determined and we're in hold mode, but shift is released, cancel the ability
+                // If we're in hold mode but shift is released, cancel the ability
                 if (__instance.isAuthority && modeDetermined && isHoldingMode && !shiftHeld && __instance.fixedAge > 0.1f)
                 {
                     Traverse.Create(__instance).Field("duration").SetValue(__instance.fixedAge);
                 }
-
-                // Update the shift state tracking
-                wasShiftHeld = shiftHeld;
             }
         }
     }
