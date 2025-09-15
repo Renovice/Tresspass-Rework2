@@ -1,8 +1,8 @@
 {
-  "name": "VoidFiendNexus",
-  "version_number": "0.1.0",
-  "website_url": "https://github.com/Renovice/VoidFiend-Nexus",
-  "description": "VoidFiend Overhaul and vfx changes, including the ability to extend his beam, a more flexible and efficient use of supress, dynamic tooltips in game and VFX color changes to match Voidfiend's themes'",
+  "name": "TrespassReworked",
+  "version_number": "0.6.0",
+  "website_url": "https://github.com/Renovice/Tresspass-Rework2/tree/Test",
+  "description": "Tired of Voidfiend moving inconsistently between corrupt and non-corrupt states? This mod fixes it, making his movement uniform and allows you to use the powers of either mode at any time, regardless of corruption.",
   "dependencies": [
     "bbepis-BepInExPack-5.4.2121",
     "tristanmcpherson-R2API-5.0.5",
