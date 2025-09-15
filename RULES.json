@@ -1,0 +1,10 @@
+1.Follow the project’s linting/formatting style (e.g., ESLint, Black, Prettier).
+2.Write docstrings and comments for complex logic.
+3.Follow the project’s file/folder structure.
+4.Use existing utility functions or libraries instead of reinventing them.
+5. USE BEPINEX plugin (its the only way to load mods into the game in dll form)
+6. Try to use R2API when possible as a Convention and also prefer on hooks over harmony patches (in general if possible without sacrificing functionality) 
+7. Try to Write the code as short and as simple as possible BUT only if absolutely possible without sacrificing performance and functionality. 
+8. Dont invent Things we are not 100% sure of, if you dont know ask the user if he knows the given identifier of the code ur refrencing or changing. 
+9. try to minimize changing existing code, just focus on the given task at hand unidemnsionally IE if someone tells u to add 1+1,  dont statt adding more stuff or "refining" his other code focus on the task given
+10. Before adding anything to existing code familarize urself with the convention it uses like Bepinex or r2api OR risk of options documentation

@@ -34,4 +34,8 @@
     <PackageReference Include="Rune580.Mods.RiskOfRain2.RiskOfOptions" Version="2.8.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="icon.png" />
+  </ItemGroup>
+
 </Project>
